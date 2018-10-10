@@ -38,8 +38,6 @@
 #include "filesys/fsutil.h"
 #endif
 
-//static struct list sema_wait_list;
-
 /* Page directory with kernel mappings only. */
 uint32_t *init_page_dir;
 
@@ -122,7 +120,6 @@ main (void)
   thread_start ();
   serial_init_queue ();
   timer_calibrate ();
-	//list_init (&sema_wait_list);
   //sema_self_test();
   //printf("\nherro\n");
   //timer_sleep(900);

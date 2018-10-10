@@ -18,6 +18,8 @@
 #error TIMER_FREQ <= 1000 recommended
 #endif
 
+static struct list sema_wait_list;
+
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
 
@@ -65,6 +67,7 @@ timer_calibrate (void)
       loops_per_tick |= test_bit;
 
   printf ("%'"PRIu64" loops/s.\n", (uint64_t) loops_per_tick * TIMER_FREQ);
+  list_init (&sema_wait_list);
 }
 
 /* Returns the number of timer ticks since the OS booted. */
@@ -103,8 +106,8 @@ timer_sleep (int64_t ticks)
   	list_push_back(&sema_wait_list, &sw.elem);
   	printf("\nblock \n");
   	sema_down(&sw.sema);
-  }*/
-  
+  }
+  */
   while (timer_elapsed (start) < ticks){ 
     thread_yield ();
     }

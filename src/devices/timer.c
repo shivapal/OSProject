@@ -7,7 +7,7 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-#include "threads/init.c"
+//#include "threads/init.c"
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -91,7 +91,7 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-  printf("tick tock \n");
+  //printf("tick tock \n");
   ASSERT (intr_get_level () == INTR_ON);
   /*
   if(timer_elapsed (timer_elapsed(start) < ticks)){

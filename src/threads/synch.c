@@ -49,7 +49,7 @@ sema_init (struct semaphore *sema, unsigned value)
   sema->value = value;
   list_init (&sema->waiters);
 }
-
+/*
 void
 sema_wait_init (struct sema_wait *sw, struct  semaphore *sema, int64_t ticks)
 {
@@ -58,7 +58,7 @@ sema_wait_init (struct sema_wait *sw, struct  semaphore *sema, int64_t ticks)
 	sw->ticks = ticks;
 	
 }
-
+*/
 /* Down or "P" operation on a semaphore.  Waits for SEMA's value
    to become positive and then atomically decrements it.
 

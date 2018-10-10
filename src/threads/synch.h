@@ -17,6 +17,14 @@ bool sema_try_down (struct semaphore *);
 void sema_up (struct semaphore *);
 void sema_self_test (void);
 
+struct sema_wait
+	{
+	struct semaphore sema;
+	int64_t ticks;
+	};
+
+void sema_wait_init (struct sema_wait *, struct semaphore *, int64_t); 
+
 /* Lock. */
 struct lock 
   {

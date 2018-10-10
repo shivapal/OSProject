@@ -38,6 +38,8 @@
 #include "filesys/fsutil.h"
 #endif
 
+static struct list sema_wait_list;
+
 /* Page directory with kernel mappings only. */
 uint32_t *init_page_dir;
 
@@ -87,8 +89,9 @@ main (void)
 
   /* Initialize ourselves as a thread so we can use locks,
      then enable console locking. */
-  thread_init ();
-  console_init ();  
+  thread_init ();	
+  console_init ();
+  //printf("lelelel keklord");  
 
   /* Greet user. */
   printf ("Pintos booting with %'"PRIu32" kB RAM...\n",
@@ -119,7 +122,9 @@ main (void)
   thread_start ();
   serial_init_queue ();
   timer_calibrate ();
-
+	list_init (&sema_wait_list);
+  //sema_self_test();
+  //timer_sleep(900);
 #ifdef FILESYS
   /* Initialize file system. */
   ide_init ();

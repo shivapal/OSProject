@@ -50,6 +50,15 @@ sema_init (struct semaphore *sema, unsigned value)
   list_init (&sema->waiters);
 }
 
+void
+sema_wait_init (struct sema_wait *sw, struct  semaphore *sema, int64_t ticks)
+{
+	ASSERT (sema != NULL);
+	sw->sema = *sema;
+	sw->ticks = ticks;
+	
+}
+
 /* Down or "P" operation on a semaphore.  Waits for SEMA's value
    to become positive and then atomically decrements it.
 
@@ -68,6 +77,7 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
+			//printf("%d \n", thread_tid());
       list_push_back (&sema->waiters, &thread_current ()->elem);
       thread_block ();
     }
@@ -137,8 +147,15 @@ sema_self_test (void)
   thread_create ("sema-test", PRI_DEFAULT, sema_test_helper, &sema);
   for (i = 0; i < 10; i++) 
     {
+      //printf("Butter\n");
+			printf("\nbefore: %d s0: %d s1: %d \n", thread_tid(),
+			sema[0].value, sema[1].value);
       sema_up (&sema[0]);
+      printf("After s0 up: %d  s0: %d s1: %d \n", thread_tid(), 
+			sema[0].value, sema[1].value);
       sema_down (&sema[1]);
+      printf("After s1 down: %d s0: %d s1: %d \n", thread_tid(),
+      sema[0].value, sema[1].value);
     }
   printf ("done.\n");
 }
@@ -152,11 +169,18 @@ sema_test_helper (void *sema_)
 
   for (i = 0; i < 10; i++) 
     {
+      //printf("Pecan\n");
+      printf("helper before: %d s0: %d s1: %d \n", thread_tid(),
+      sema[0].value, sema[1].value);
       sema_down (&sema[0]);
+      printf("helper after s0 down: %d s0: %d s1: %d \n", thread_tid(),
+      sema[0].value, sema[1].value);
       sema_up (&sema[1]);
+      printf("helper after s1 up: %d s0: %d s1: %d \n", thread_tid(),
+      sema[0].value, sema[1].value);
     }
 }
-
+
 /* Initializes LOCK.  A lock can be held by at most a single
    thread at any given time.  Our locks are not "recursive", that
    is, it is an error for the thread currently holding a lock to
@@ -245,7 +269,7 @@ lock_held_by_current_thread (const struct lock *lock)
 
   return lock->holder == thread_current ();
 }
-
+
 /* One semaphore in a list. */
 struct semaphore_elem 
   {

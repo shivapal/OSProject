@@ -90,8 +90,19 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-
+  //printf("tick tock \n");
   ASSERT (intr_get_level () == INTR_ON);
+  /*
+  if(timer_elapsed (timer_elapsed(start) < ticks){
+  	struct semaphore sema;
+  	sema_init(&sema,0);
+  	struct sema_wait sw;
+  	int64_t temp = start + ticks;
+  	sema_wait_init(&sw, &sema, temp);
+  	list_push_back(&sema_wait_list, &sw);
+  	sema_down(sema_wait_list.sema);
+  }
+  */
   while (timer_elapsed (start) < ticks) 
     thread_yield ();
 }
@@ -165,11 +176,16 @@ timer_print_stats (void)
 {
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
+
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
+	/*
+	if(!list_empty(&sema_wait_list)){
+		
+	}
+	*/
   ticks++;
   thread_tick ();
 }

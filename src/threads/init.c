@@ -124,6 +124,7 @@ main (void)
   timer_calibrate ();
 	list_init (&sema_wait_list);
   //sema_self_test();
+  //printf("\nherro\n");
   //timer_sleep(900);
 #ifdef FILESYS
   /* Initialize file system. */
@@ -141,7 +142,7 @@ main (void)
   shutdown ();
   thread_exit ();
 }
-
+
 /* Clear the "BSS", a segment that should be initialized to
    zeros.  It isn't actually stored on disk or zeroed by the
    kernel loader, so we have to zero it ourselves.

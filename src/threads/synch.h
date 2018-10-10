@@ -19,6 +19,7 @@ void sema_self_test (void);
 
 struct sema_wait
 	{
+	struct list_elem elem;
 	struct semaphore sema;
 	int64_t ticks;
 	};

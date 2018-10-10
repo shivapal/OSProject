@@ -7,6 +7,7 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include "threads/init.c"
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -90,21 +91,24 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-  //printf("tick tock \n");
+  printf("tick tock \n");
   ASSERT (intr_get_level () == INTR_ON);
   /*
-  if(timer_elapsed (timer_elapsed(start) < ticks){
+  if(timer_elapsed (timer_elapsed(start) < ticks)){
   	struct semaphore sema;
   	sema_init(&sema,0);
   	struct sema_wait sw;
   	int64_t temp = start + ticks;
   	sema_wait_init(&sw, &sema, temp);
-  	list_push_back(&sema_wait_list, &sw);
-  	sema_down(sema_wait_list.sema);
-  }
-  */
-  while (timer_elapsed (start) < ticks) 
+  	list_push_back(&sema_wait_list, &sw.elem);
+  	printf("\nblock \n");
+  	sema_down(&sw.sema);
+  }*/
+  
+  while (timer_elapsed (start) < ticks){ 
     thread_yield ();
+    }
+    
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -183,7 +187,18 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
 	/*
 	if(!list_empty(&sema_wait_list)){
-		
+		struct list_elem *e;
+
+      for (e = list_begin (&sema_wait_list); e != list_end (&sema_wait_list);
+           e = list_next (e))
+        {
+          struct sema_wait *sw = list_entry(e, struct sema_wait, elem);
+          if(sw->ticks<=timer_ticks()){
+          list_remove(e);
+          printf("\nunblock\n");
+          sema_up(&(sw->sema));
+          }
+        }
 	}
 	*/
   ticks++;

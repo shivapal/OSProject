@@ -7,7 +7,6 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-//#include "threads/init.c"
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -97,17 +96,19 @@ timer_sleep (int64_t ticks)
   //printf("tick tock \n");
   ASSERT (intr_get_level () == INTR_ON);
   /*
-  if(timer_elapsed (timer_elapsed(start) < ticks)){
+  intr_disable();
+  if(timer_elapsed(start) < ticks){  // check if ticks have passed
   	struct semaphore sema;
   	sema_init(&sema,0);
   	struct sema_wait sw;
-  	int64_t temp = start + ticks;
+  	int64_t temp = start + ticks;  // keep total ticks when sleep should end
   	sema_wait_init(&sw, &sema, temp);
   	list_push_back(&sema_wait_list, &sw.elem);
-  	printf("\nblock \n");
+  	//printf("\nblock \n");
   	sema_down(&sw.sema);
   }
   */
+  
   while (timer_elapsed (start) < ticks){ 
     thread_yield ();
     }
@@ -187,23 +188,27 @@ timer_print_stats (void)
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
-{
-	/*
-	if(!list_empty(&sema_wait_list)){
-		struct list_elem *e;
+{	
 
-      for (e = list_begin (&sema_wait_list); e != list_end (&sema_wait_list);
-           e = list_next (e))
-        {
+/*if((!list_empty(&sema_wait_list)) && (list_entry(list_begin						(&sema_wait_list),struct sema_wait, elem)-> ticks)>= timer_ticks()){
+  struct list_elem *e=list_pop_front(&sema_wait_list);
+  struct sema_wait *sw = list_entry(e, struct sema_wait, elem);
+  sema_up(list_entry(pop_front(&sema_wait_list),struct sema_wait,elem)->sema);
+  
+		
+    for (e = list_begin (&sema_wait_list); e != list_end (&sema_wait_list);
+         e = list_next (e)){
           struct sema_wait *sw = list_entry(e, struct sema_wait, elem);
-          if(sw->ticks<=timer_ticks()){
-          list_remove(e);
-          printf("\nunblock\n");
-          sema_up(&(sw->sema));
+          if(sw->ticks>=timer_ticks()){
+          	list_remove(e);
+          	printf("\nunblock\n");
+          	sema_up(&(sw->sema));
+          } else {
+          	break;
           }
-        }
-	}
-	*/
+       }  
+	}*/
+	
   ticks++;
   thread_tick ();
 }

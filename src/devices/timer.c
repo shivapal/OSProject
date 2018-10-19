@@ -39,6 +39,8 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
+  //printf("\nlist init\n");
+  list_init (&sema_wait_list);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -66,7 +68,6 @@ timer_calibrate (void)
       loops_per_tick |= test_bit;
 
   printf ("%'"PRIu64" loops/s.\n", (uint64_t) loops_per_tick * TIMER_FREQ);
-  list_init (&sema_wait_list);
 }
 
 /* Returns the number of timer ticks since the OS booted. */
@@ -95,8 +96,8 @@ timer_sleep (int64_t ticks)
   int64_t start = timer_ticks ();
   //printf("tick tock \n");
   ASSERT (intr_get_level () == INTR_ON);
-  /*
-  intr_disable();
+  
+  enum intr_level old_level=intr_disable();
   if(timer_elapsed(start) < ticks){  // check if ticks have passed
   	struct semaphore sema;
   	sema_init(&sema,0);
@@ -104,15 +105,16 @@ timer_sleep (int64_t ticks)
   	int64_t temp = start + ticks;  // keep total ticks when sleep should end
   	sema_wait_init(&sw, &sema, temp);
   	list_push_back(&sema_wait_list, &sw.elem);
-  	//printf("\nblock \n");
-  	sema_down(&sw.sema);
+  	//printf("\nis this shit running\n");
+  	intr_set_level (old_level);
+  	sema_down(sw.sema);
   }
-  */
   
+  /*
   while (timer_elapsed (start) < ticks){ 
     thread_yield ();
     }
-    
+   */
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -188,29 +190,40 @@ timer_print_stats (void)
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
-{	
+{
+	ticks++;
+  thread_tick ();	
 
-/*if((!list_empty(&sema_wait_list)) && (list_entry(list_begin						(&sema_wait_list),struct sema_wait, elem)-> ticks)>= timer_ticks()){
-  struct list_elem *e=list_pop_front(&sema_wait_list);
-  struct sema_wait *sw = list_entry(e, struct sema_wait, elem);
-  sema_up(list_entry(pop_front(&sema_wait_list),struct sema_wait,elem)->sema);
-  
-		
-    for (e = list_begin (&sema_wait_list); e != list_end (&sema_wait_list);
-         e = list_next (e)){
-          struct sema_wait *sw = list_entry(e, struct sema_wait, elem);
-          if(sw->ticks>=timer_ticks()){
-          	list_remove(e);
-          	printf("\nunblock\n");
-          	sema_up(&(sw->sema));
-          } else {
-          	break;
-          }
-       }  
-	}*/
+if((!list_empty(&sema_wait_list)) /*&& (list_entry(list_begin						(&sema_wait_list),struct sema_wait, elem)-> ticks)<= timer_ticks()*/){
+	//printf("\nWrong side of town\n");
+	struct list_elem *e=list_begin (&sema_wait_list);
+	while( e != list_end (&sema_wait_list)){
+		struct sema_wait *sw = list_entry(e, struct sema_wait, elem);
+		/*
+		struct list w=sw->sema.waiters;
+		if(list_front(&w)==NULL){
+			printf("\nnull\n");
+		} else if(list_front(&w)->prev==NULL){
+			printf("\nhead\n");
+		} else if(list_front(&w)->next==NULL){
+			printf("\ntail\n");
+		} else {
+			printf("\nworking\n");
+		}
+		*/
+		//printf("\n%d\n",list_empty(&sw->sema.waiters));
+		if(sw->ticks<=timer_ticks()){
+			//printf("\nenter\n");
+			sema_up(sw->sema);
+			e=list_remove(e);
+		} else {
+			//printf("\nexit\n");
+			e=list_next(e);
+		}
+	}
+	}
 	
-  ticks++;
-  thread_tick ();
+  
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

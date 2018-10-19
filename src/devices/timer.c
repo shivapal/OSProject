@@ -17,7 +17,11 @@
 #error TIMER_FREQ <= 1000 recommended
 #endif
 
-static struct list sema_wait_list;
+static struct list sema_wait_list; //holds sema_waits, which hold the semaphores
+//for timer_sleep()
+
+static struct semaphore sleep_mutex; //mutex that prevents race conditions in
+//timer_sleep()
 
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
@@ -39,8 +43,8 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
-  //printf("\nlist init\n");
   list_init (&sema_wait_list);
+  sema_init(&sleep_mutex,1);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -94,27 +98,22 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-  //printf("tick tock \n");
   ASSERT (intr_get_level () == INTR_ON);
   
-  enum intr_level old_level=intr_disable();
+  //enum intr_level old_level=intr_disable();
+  
   if(timer_elapsed(start) < ticks){  // check if ticks have passed
   	struct semaphore sema;
   	sema_init(&sema,0);
   	struct sema_wait sw;
   	int64_t temp = start + ticks;  // keep total ticks when sleep should end
   	sema_wait_init(&sw, &sema, temp);
+  	sema_down(&sleep_mutex);
   	list_push_back(&sema_wait_list, &sw.elem);
-  	//printf("\nis this shit running\n");
-  	intr_set_level (old_level);
+  	//intr_set_level (old_level);
+  	sema_up(&sleep_mutex);
   	sema_down(sw.sema);
   }
-  
-  /*
-  while (timer_elapsed (start) < ticks){ 
-    thread_yield ();
-    }
-   */
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -199,31 +198,15 @@ if((!list_empty(&sema_wait_list)) /*&& (list_entry(list_begin						(&sema_wait_l
 	struct list_elem *e=list_begin (&sema_wait_list);
 	while( e != list_end (&sema_wait_list)){
 		struct sema_wait *sw = list_entry(e, struct sema_wait, elem);
-		/*
-		struct list w=sw->sema.waiters;
-		if(list_front(&w)==NULL){
-			printf("\nnull\n");
-		} else if(list_front(&w)->prev==NULL){
-			printf("\nhead\n");
-		} else if(list_front(&w)->next==NULL){
-			printf("\ntail\n");
-		} else {
-			printf("\nworking\n");
-		}
-		*/
-		//printf("\n%d\n",list_empty(&sw->sema.waiters));
+
 		if(sw->ticks<=timer_ticks()){
-			//printf("\nenter\n");
 			sema_up(sw->sema);
 			e=list_remove(e);
 		} else {
-			//printf("\nexit\n");
 			e=list_next(e);
 		}
 	}
 	}
-	
-  
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

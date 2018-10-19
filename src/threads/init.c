@@ -89,7 +89,6 @@ main (void)
      then enable console locking. */
   thread_init ();	
   console_init ();
-  //printf("lelelel keklord");  
 
   /* Greet user. */
   printf ("Pintos booting with %'"PRIu32" kB RAM...\n",
@@ -120,9 +119,6 @@ main (void)
   thread_start ();
   serial_init_queue ();
   timer_calibrate ();
-  //sema_self_test();
-  //printf("\nherro\n");
-  //timer_sleep(900);
   
 #ifdef FILESYS
   /* Initialize file system. */

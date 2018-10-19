@@ -52,8 +52,7 @@ sema_init (struct semaphore *sema, unsigned value)
 }
 
 void
-sema_wait_init (struct sema_wait *sw, struct  semaphore *sema, int64_t ticks)
-{	//printf("\n what in the fuck %d\n",sema->value);
+sema_wait_init (struct sema_wait *sw, struct  semaphore *sema, int64_t ticks){
 	ASSERT (sema != NULL);
 	sw->sema = sema;
 	sw->ticks = ticks;
@@ -79,12 +78,6 @@ sema_down (struct semaphore *sema)
   while (sema->value == 0) 
     {
       list_push_back (&sema->waiters, &thread_current ()->elem);
-      /*
-      if(list_front(&sema->waiters)==&thread_current ()->elem){
-      	printf("\nworking\n");
-      }
-      printf("\n%d\n",list_size(&sema->waiters));*/
-
       thread_block ();
     }
   sema->value--;
@@ -131,8 +124,6 @@ sema_up (struct semaphore *sema)
   old_level = intr_disable ();
   
   if (!list_empty (&sema->waiters)){
-  	
-		//printf("\n%d\n",list_empty(&sema->waiters));
     thread_unblock (list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem));
   }

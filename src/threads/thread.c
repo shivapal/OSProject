@@ -16,11 +16,9 @@
 #endif
 
 static bool pri_comp(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
-	bool retval=false; //entrya.priority < entryb.priority
-	
 	struct thread *entrya = list_entry(a, struct thread, elem);
-	//struct thread entryb = list_entry(b, struct thread, elem);
-	return retval;
+	struct thread *entryb = list_entry(b, struct thread, elem);
+	return (entrya->priority) < (entryb->priority);
 }
 list_less_func pri_comp;
 
@@ -104,7 +102,6 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
-  //printf("shi'ne");
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
@@ -122,7 +119,6 @@ thread_start (void)
 
   /* Start preemptive thread scheduling. */
   intr_enable ();
-  //thread_print_stats();
   /* Wait for the idle thread to initialize idle_thread. */
   sema_down (&idle_started);
 }
@@ -227,8 +223,6 @@ thread_block (void)
   ASSERT (intr_get_level () == INTR_OFF);
 
   thread_current ()->status = THREAD_BLOCKED;
-	//after implementing scheduler, also add to waiting list
-  //printf("block\n");
   schedule ();
 }
 
@@ -249,10 +243,11 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  void (*pri_ptr)(bool)=&pri_comp;
+  list_insert_ordered(&ready_list, &t->elem, pri_ptr, NULL);
+  //list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
-  //printf("unblock\n");
 }
 
 /* Returns the name of the running thread. */
@@ -321,7 +316,9 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) {
-    list_push_back (&ready_list, &cur->elem); //change to insert_ordered
+  	void (*pri_ptr)(bool)=&pri_comp;
+  	list_insert_ordered(&ready_list, &cur->elem, pri_ptr, NULL);
+    //list_push_back (&ready_list, &cur->elem);
  
   }
   cur->status = THREAD_READY;

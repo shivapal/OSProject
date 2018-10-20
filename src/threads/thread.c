@@ -15,6 +15,15 @@
 #include "userprog/process.h"
 #endif
 
+static bool pri_comp(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
+	bool retval=false; //entrya.priority < entryb.priority
+	
+	struct thread *entrya = list_entry(a, struct thread, elem);
+	//struct thread entryb = list_entry(b, struct thread, elem);
+	return retval;
+}
+list_less_func pri_comp;
+
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
@@ -312,10 +321,8 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) {
-    list_push_back (&ready_list, &cur->elem);
-    //printf("%d \n", *cur->tid);
-  } else {
-    printf("idle\n");
+    list_push_back (&ready_list, &cur->elem); //change to insert_ordered
+ 
   }
   cur->status = THREAD_READY;
   schedule ();

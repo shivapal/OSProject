@@ -18,7 +18,12 @@
 static bool pri_comp(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
 	struct thread *entrya = list_entry(a, struct thread, elem);
 	struct thread *entryb = list_entry(b, struct thread, elem);
-	return (entrya->priority) < (entryb->priority);
+	if(entrya->priority == entryb->priority){
+		return true;
+	} else {
+		return (entrya->priority) < (entryb->priority);
+	}
+	
 }
 list_less_func pri_comp;
 
@@ -243,10 +248,23 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  void (*pri_ptr)(bool)=&pri_comp;
-  list_insert_ordered(&ready_list, &t->elem, pri_ptr, NULL);
+  
+  if(thread_mlfqs){
+  	list_push_front(&ready_list, &t->elem);
+  } else{
+  	void (*pri_ptr)(bool)=&pri_comp;
+  	list_insert_ordered(&ready_list, &t->elem, pri_ptr, NULL);
+  }
+
   //list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
+  if(!thread_mlfqs){
+  	if((thread_current()->priority) < (t -> priority)){
+  	/*
+  		thread_current()->status= THREAD_BLOCKED;
+  		schedule();*/
+  	}
+  }
   intr_set_level (old_level);
 }
 
@@ -315,9 +333,16 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
+  
   if (cur != idle_thread) {
-  	void (*pri_ptr)(bool)=&pri_comp;
-  	list_insert_ordered(&ready_list, &cur->elem, pri_ptr, NULL);
+  
+  	if(thread_mlfqs){
+  		list_push_front(&ready_list, &cur->elem);
+  	} else{
+  		void (*pri_ptr)(bool)=&pri_comp;
+  		list_insert_ordered(&ready_list, &cur->elem, pri_ptr, NULL);
+  	}
+  	
     //list_push_back (&ready_list, &cur->elem);
  
   }
@@ -348,6 +373,10 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+  
+  if(!list_empty(&ready_list) && new_priority<list_entry(list_back(&ready_list), struct thread, elem) ->priority){
+  	thread_yield();
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -506,7 +535,7 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+    return list_entry (list_pop_back (&ready_list), struct thread, elem);
 }
 
 /* Completes a thread switch by activating the new thread's page

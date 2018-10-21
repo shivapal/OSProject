@@ -35,7 +35,11 @@
 static bool pri_comp(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
 	struct thread *entrya = list_entry(a, struct thread, elem);
 	struct thread *entryb = list_entry(b, struct thread, elem);
-	return (entrya->priority) < (entryb->priority);
+	if(entrya->priority == entryb->priority){
+		return true;
+	} else {
+		return (entrya->priority) < (entryb->priority);
+	}
 }
 list_less_func pri_comp;
 
@@ -84,8 +88,12 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-    void (*pri_ptr)(bool)=&pri_comp;
+    if(thread_mlfqs){
+    	list_push_front (&sema->waiters, &thread_current()->elem);
+    } else{
+    	void (*pri_ptr)(bool)=&pri_comp;
     	list_insert_ordered(&sema->waiters, &thread_current()->elem, pri_ptr, NULL);
+    }
       //list_push_back (&sema->waiters, &thread_current ()->elem);
       thread_block ();
     }
@@ -133,7 +141,7 @@ sema_up (struct semaphore *sema)
   old_level = intr_disable ();
   
   if (!list_empty (&sema->waiters)){
-    thread_unblock (list_entry (list_pop_front (&sema->waiters),
+    thread_unblock (list_entry (list_pop_back (&sema->waiters),
                                 struct thread, elem));
   }
   sema->value++;
@@ -330,9 +338,12 @@ cond_wait (struct condition *cond, struct lock *lock)
   
   sema_init (&waiter.semaphore, 0);
   
-  void (*pri_ptr)(bool)=&pri_comp;
-  list_insert_ordered(&cond->waiters, &waiter.elem, pri_ptr, NULL);
-  
+  if(thread_mlfqs){
+  	list_push_front(&cond->waiters, &waiter.elem);
+  } else {
+  	void (*pri_ptr)(bool)=&pri_comp;
+  	list_insert_ordered(&cond->waiters, &waiter.elem, pri_ptr, NULL);
+  }
   //list_push_back (&cond->waiters, &waiter.elem);
   lock_release (lock);
   sema_down (&waiter.semaphore);
@@ -355,7 +366,7 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
   ASSERT (lock_held_by_current_thread (lock));
 
   if (!list_empty (&cond->waiters)) 
-    sema_up (&list_entry (list_pop_front (&cond->waiters),
+    sema_up (&list_entry (list_pop_back (&cond->waiters),
                           struct semaphore_elem, elem)->semaphore);
 }
 

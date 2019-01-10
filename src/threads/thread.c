@@ -258,13 +258,13 @@ thread_unblock (struct thread *t)
 
   //list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
-  if(!thread_mlfqs){
+  /*if(!thread_mlfqs){
   	if((thread_current()->priority) < (t -> priority)){
-  	/*
-  		thread_current()->status= THREAD_BLOCKED;
-  		schedule();*/
+  	
+  		thread_current()->status= THREAD_READY;
+  		schedule();
   	}
-  }
+  }*/
   intr_set_level (old_level);
 }
 

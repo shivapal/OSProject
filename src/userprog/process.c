@@ -37,11 +37,32 @@ process_execute (const char *file_name)
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
+//read the filename using strtok_r with the ptr retained
+//char * ptr;
+//char * filename = strtok_r((char *)file_name," ",&ptr);
 
+  char *token, *save_ptr;
+  token= strtok_r(fn_copy," ", &save_ptr);
+  size_t size= sizeof(token);
+	strlcpy(thread_current()->stack,thread_current(),size);
+	thread_current()->stack=thread_current()->stack+size;
+	
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (token, PRI_DEFAULT, start_process, token);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
+    
+  
+
+   for (token = strtok_r (NULL, " ", &save_ptr); token != NULL;
+        token = strtok_r (NULL, " ", &save_ptr)){
+        	//printf ("'%s'\n", token);
+        	size_t size= sizeof(token);
+        	memcpy(thread_current()->stack,thread_current(),size);
+        	thread_current()->stack=thread_current()->stack+size;
+        }
+   
+  
   return tid;
 }
 
@@ -72,6 +93,7 @@ start_process (void *file_name_)
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
+
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
@@ -88,6 +110,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+	while(1);
   return -1;
 }
 
@@ -117,7 +140,7 @@ process_exit (void)
 }
 
 /* Sets up the CPU for running user code in the current
-   thread.
+   thread
    This function is called on every context switch. */
 void
 process_activate (void)
@@ -437,7 +460,7 @@ setup_stack (void **esp)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE;
+        *esp = PHYS_BASE-12;
       else
         palloc_free_page (kpage);
     }
